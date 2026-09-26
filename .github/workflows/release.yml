@@ -21,8 +21,11 @@ jobs:
           node-version: 24 # ships npm 11, required for trusted publishing
           cache: pnpm
           registry-url: https://registry.npmjs.org
+      - run: npm install -g npm@latest # `npm stage` needs a recent npm
       - run: pnpm install --frozen-lockfile
-      - run: npm publish # prepublishOnly runs typecheck, test, build and lint:pkg
+      - run: pnpm typecheck && pnpm test && pnpm build && pnpm lint:pkg
+      # Uploads the release as staged; it goes public once approved with 2FA (`npm stage approve`).
+      - run: npm stage publish
 
   jsr:
     runs-on: ubuntu-latest
