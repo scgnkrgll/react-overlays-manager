@@ -1,6 +1,6 @@
 {
   "name": "react-overlord",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Type-safe, headless manager for modals, menus, toasts and other overlays.",
   "license": "MIT",
   "author": "Seçgin Karagülle",
