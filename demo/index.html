@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>react-overlord</title>
+    <meta name="description" content="Type-safe, headless manager for modals, menus, toasts and other overlays." />
+    <script>
+      // Apply the saved (or system) theme before first paint, so dark mode doesn't flash.
+      try {
+        const theme = localStorage.getItem("theme");
+        const dark = theme ? theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.classList.toggle("dark", dark);
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,233 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+/* shadcn/ui theme (neutral) */
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --success: oklch(0.6 0.15 150);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --success: oklch(0.72 0.15 150);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+}
+
+@theme inline {
+  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    color-scheme: light;
+    scroll-padding-top: 1.5rem;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+/* Docs: the README, rendered at build time (see the markdown plugin in vite.config.ts).
+   Unlayered, so it wins over the typography plugin's utilities. */
+.docs {
+  --tw-prose-body: var(--foreground);
+  --tw-prose-headings: var(--foreground);
+  --tw-prose-bold: var(--foreground);
+  --tw-prose-links: var(--foreground);
+  --tw-prose-code: var(--foreground);
+  --tw-prose-bullets: var(--muted-foreground);
+  --tw-prose-th-borders: var(--border);
+  --tw-prose-td-borders: var(--border);
+}
+.docs :where(h2, h3) {
+  position: relative;
+}
+.docs .anchor {
+  position: absolute;
+  right: 100%;
+  padding-right: 0.4em;
+  color: var(--muted-foreground);
+  text-decoration: none;
+  font-weight: 400;
+  opacity: 0;
+  transition: opacity 150ms;
+}
+.docs :where(h2, h3):hover .anchor,
+.docs .anchor:focus-visible {
+  opacity: 1;
+}
+.docs :not(pre) > code {
+  @apply rounded-md bg-muted px-1.5 py-0.5 font-normal;
+}
+.docs :not(pre) > code::before,
+.docs :not(pre) > code::after {
+  content: none;
+}
+.docs table {
+  @apply block overflow-x-auto;
+}
+
+.code-block {
+  position: relative;
+}
+.code-block pre.shiki {
+  @apply my-5 rounded-lg border text-[0.8125rem] leading-relaxed;
+}
+.dark .shiki,
+.dark .shiki span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+}
+.code-block .copy {
+  @apply absolute top-2 right-2 cursor-pointer rounded-md border bg-background px-2 py-0.5 font-sans text-xs text-muted-foreground opacity-0 transition-opacity hover:text-foreground focus-visible:opacity-100;
+}
+.code-block:hover .copy {
+  opacity: 1;
+}
+@media (hover: none) {
+  .code-block .copy {
+    opacity: 1;
+  }
+}
+
+/* Toasts: an Ark-style pile. Collapsed, older toasts peek out behind the front one;
+   hovering or focusing the group spreads them into a list using the measured --offset. */
+@layer components {
+  .toast-group {
+    --gap: 12px;
+    --peek: 10px;
+    position: fixed;
+    z-index: 60;
+    right: 16px;
+    bottom: 16px;
+    width: min(340px, calc(100vw - 32px));
+    height: var(--front-height);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    transition: height 250ms ease;
+  }
+  .toast {
+    position: absolute;
+    inset: auto 0 0 0;
+    z-index: calc(100 - var(--index));
+    transform-origin: bottom center;
+    translate: 0 calc(var(--index) * var(--peek) * -1);
+    scale: calc(1 - var(--index) * 0.05);
+    transition:
+      translate 300ms ease,
+      scale 300ms ease,
+      opacity 300ms ease,
+      height 300ms ease;
+  }
+  /* Collapsed: back toasts take the front toast's height and hide their text, so the pile looks even. */
+  .toast-group:not([data-expanded="true"]) .toast[data-front="false"] {
+    height: var(--front-height);
+    overflow: hidden;
+  }
+  .toast-group:not([data-expanded="true"]) .toast[data-front="false"] .toast-body > * {
+    opacity: 0;
+  }
+  .toast[data-hidden="true"] {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .toast[data-expanded="true"] {
+    translate: 0 calc((var(--offset) + var(--index) * var(--gap)) * -1);
+    scale: 1;
+    opacity: 1;
+    pointer-events: auto;
+  }
+  /* Bridge the gap below each expanded toast, so moving between toasts doesn't collapse the group. */
+  .toast[data-expanded="true"]::after {
+    content: "";
+    position: absolute;
+    inset: 100% 0 auto 0;
+    height: var(--gap);
+  }
+  /* Closing toasts slide out sideways from wherever they are, collapsed or expanded. */
+  .toast[data-phase="closing"] {
+    opacity: 0;
+    translate: 40px calc(var(--index) * var(--peek) * -1);
+    pointer-events: none;
+  }
+  .toast[data-phase="closing"][data-expanded="true"] {
+    translate: 40px calc((var(--offset) + var(--index) * var(--gap)) * -1);
+  }
+  @starting-style {
+    .toast {
+      opacity: 0;
+      translate: 0 100%;
+    }
+  }
+  .toast-body > * {
+    transition: opacity 200ms ease;
+  }
+}

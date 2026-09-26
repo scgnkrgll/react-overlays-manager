@@ -1,0 +1,11 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    // Generated shadcn/ui components aren't written against this flag.
+    "exactOptionalPropertyTypes": false,
+    "types": [],
+    "paths": { "@/*": ["./*"] }
+  },
+  "include": ["."],
+  "exclude": ["dist"]
+}
