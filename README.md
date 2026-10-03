@@ -7,7 +7,7 @@ A type-safe, headless manager for modals, drawers, context menus, toasts and any
 
 - **Fully typed.** `open()` knows the overlay's props and what it submits. `useOverlay()` knows the same types.
 - **Async work without losing input.** While the caller's `onSubmit` runs, the overlay stays open and can disable itself. If it fails, the overlay stays open with the user's input intact and shows the error, so the user can retry.
-- **One way to do each thing.** Open with `Handle.open()`. Finish with `submit()` or `dismiss()`. There are no aliases or alternative forms.
+- **One way to do each thing.** Open with `Handle.open()`, or `Handle.openAsync()` to `await` the result. Finish with `submit()` or `dismiss()`. There are no aliases or alternative forms.
 - **Headless.** Bring your own UI (antd, MUI, plain HTML). The library only manages state and rendering.
 
 ## Install
@@ -107,6 +107,27 @@ overlays.dismissAll();             // or overlays.dismissAll("toast")
 
 Callbacks are read once, when `open` is called. For values that change while the overlay is open, read them from a ref or a store inside the callback.
 
+### Awaiting the result
+
+`openAsync` returns a promise instead of an instance. It resolves once the overlay closes and never rejects:
+
+```tsx
+const result = await Confirm.openAsync({ text: "Delete?" });
+if (!result.submitted) return;
+
+const edited = await UserModal.openAsync({ user }, {
+  onSubmit: (user, { signal }) => api.saveUser(user, { signal }),  // optional; failures keep the overlay open
+});
+if (edited.submitted) setUser(edited.value);
+```
+
+| Outcome | Resolves with |
+|---|---|
+| submit succeeds (`onSubmit` returned, or its promise resolved) | `{ submitted: true, value }` |
+| dismissed, evicted by `dismiss-oldest`, or an `abortable` submit aborted | `{ submitted: false }` |
+
+`onSubmit` is optional here, even when the overlay submits a value, and `onDismiss` isn't accepted because the promise covers it. A failed `onSubmit` doesn't settle the promise: the overlay stays open in `failed` so the user can retry. The promise resolves once the overlay closes, so the caller can open the next one right away. With `exitTransition`, that's when the exit animation starts, not when it finishes. To update or dismiss the overlay from outside, use `open()`.
+
 ### Aborting a pending submit
 
 By default an overlay can't be dismissed while `onSubmit` is pending. The caller can opt in:
@@ -196,6 +217,37 @@ Guarantees:
 - Only the next `submit` clears the error.
 - An overlay is never remounted while open.
 - Callbacks run after the state has been updated, so they can safely open other overlays.
+
+## Comparison
+
+How react-overlord compares with [overlay-kit](https://github.com/toss/overlay-kit) (1.9) and [nice-modal-react](https://github.com/eBay/nice-modal-react) (1.2), based on their published type definitions.
+
+| | react-overlord | overlay-kit | nice-modal-react |
+|---|---|---|---|
+| Result type | Declared once on the overlay | Annotated per call: `openAsync<T>()`, otherwise `unknown` | Annotated per call: `show<T>()`, otherwise `unknown` |
+| Submit vs. dismiss | Separate: `{ submitted: true, value }` or `{ submitted: false }` | One `close(value)`. Cancel is a value you pick, `reject` is untyped. | `resolve(unknown)` / `reject(unknown)`. Hiding without either leaves the promise pending. |
+| Props checked at open | Yes, required props are required | Yes, via JSX in the callback | Partially: `show()` accepts `Partial<Props>` |
+| Result can't be dropped | `onSubmit` is required when the overlay submits a value | No | No |
+| Async submit with pending and failed states | Built in, with retry and abort | Build it yourself | Build it yourself |
+| Limits, queueing, render order | Per layer | No | No |
+| Stacked toasts | Built in | No | No |
+| Setup | Manager, layers, `createOverlay` per overlay | Provider, then inline `open()` | Provider, then `NiceModal.create()` |
+
+The difference shows up as soon as you await a result:
+
+```tsx
+// overlay-kit: T can't be inferred from close(), so every caller has to annotate it
+const ok = await overlay.openAsync(({ isOpen, close }) => (
+  <Confirm open={isOpen} onOk={() => close(true)} onCancel={() => close(false)} />
+));
+// ok: unknown
+
+// react-overlord: the type comes from the overlay's definition
+const result = await UserModal.openAsync({ user });
+if (result.submitted) result.value; // User
+```
+
+**When to pick something else.** For a few one-off confirm dialogs, overlay-kit is less setup: no manager and nothing to register. nice-modal-react ships ready-made helpers for antd, MUI and Bootstrap modals. react-overlord pays off when overlays are reused across an app, return data, or run async work that can fail.
 
 ## Development
 
