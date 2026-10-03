@@ -15,6 +15,8 @@ import type {
   OverlayHandle,
   OverlayInstance,
   OverlayManager,
+  OverlayResult,
+  OpenAsyncOptions,
   StackGroup,
   StackInfo,
 } from "./types.ts";
@@ -41,21 +43,33 @@ export function createOverlayManager<const Layers extends Record<string, LayerCo
     if (!store.hasLayer(layer)) {
       throw new Error(`Unknown overlay layer "${layer}". Declared layers: ${Object.keys(config.layers).join(", ")}.`);
     }
+    const start = (props: unknown, callbacks: Callbacks) =>
+      store.open({
+        layer,
+        handle,
+        component: component as AnyComponent,
+        exitTransition: options.exitTransition ?? false,
+        props: props ?? {},
+        callbacks,
+      });
     const handle: AnyHandle = {
       displayName: component.displayName ?? (component.name || "Overlay"),
       open(props?: unknown, callbacks?: Callbacks): OverlayInstance<unknown> {
-        const id = store.open({
-          layer,
-          handle,
-          component: component as AnyComponent,
-          exitTransition: options.exitTransition ?? false,
-          props: props ?? {},
-          callbacks: callbacks ?? {},
-        });
+        const id = start(props, callbacks ?? {});
         return {
           update: (next) => store.update(id, next),
           dismiss: () => store.dismiss(id),
         };
+      },
+      openAsync(props?: unknown, { onSubmit, abortable }: OpenAsyncOptions<unknown> = {}) {
+        return new Promise<OverlayResult<unknown>>((resolve) => {
+          start(props, {
+            onSubmit,
+            abortable,
+            onSubmitted: (value) => resolve({ submitted: true, value }),
+            onDismiss: () => resolve({ submitted: false }),
+          });
+        });
       },
     };
     return handle;

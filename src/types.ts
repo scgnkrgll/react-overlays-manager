@@ -105,6 +105,24 @@ export type OpenArgs<P, V> =
       : [props: P, callbacks?: OpenCallbacks<V>]
     : [props: P, callbacks: OpenCallbacks<V>];
 
+/** Options for `openAsync()`. The promise replaces `onDismiss`, and `onSubmit` becomes optional. */
+export interface OpenAsyncOptions<V> {
+  /** Return a promise to keep the overlay pending until it settles. `openAsync` resolves only after it succeeds. */
+  readonly onSubmit?: OnSubmit<V>;
+  /** Allow `dismiss()` while `onSubmit` is pending. The submit's signal is aborted. */
+  readonly abortable?: boolean;
+}
+
+/** Arguments of `Handle.openAsync()`. Props are optional only when every prop is optional. */
+export type OpenAsyncArgs<P, V> = {} extends P
+  ? [props?: P, options?: OpenAsyncOptions<V>]
+  : [props: P, options?: OpenAsyncOptions<V>];
+
+/** What `openAsync()` resolves to. It never rejects: a dismiss resolves with `submitted: false`. */
+export type OverlayResult<V> =
+  | { readonly submitted: true; readonly value: V }
+  | { readonly submitted: false };
+
 export type SubmitFn<V> = IsVoid<V> extends true ? () => void : (value: V) => void;
 
 /** What `useOverlay(Handle)` returns inside the overlay component. */
@@ -134,6 +152,11 @@ export interface OverlayInstance<P> {
 export interface OverlayHandle<P, V, S extends boolean = false> {
   readonly displayName: string;
   open(...args: OpenArgs<P, V>): OverlayInstance<P>;
+  /**
+   * Opens the overlay and resolves once it closes: with the value after a successful submit,
+   * or with `submitted: false` after a dismiss. Use `open()` to update or dismiss it from outside.
+   */
+  openAsync(...args: OpenAsyncArgs<P, V>): Promise<OverlayResult<V>>;
   /** Type-only carrier for `useOverlay`. Never set at runtime. */
   readonly "~types"?: { readonly props: P; readonly value: V; readonly stack: S };
 }

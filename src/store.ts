@@ -7,6 +7,8 @@ export interface Callbacks {
   onSubmit?: ((value: never, context: { signal: AbortSignal }) => unknown) | undefined;
   onDismiss?: (() => void) | undefined;
   abortable?: boolean | undefined;
+  /** Internal: called after a successful submit closes the overlay. Backs `openAsync`. */
+  onSubmitted?: ((value: unknown) => void) | undefined;
 }
 
 export interface OpenRequest<H, C> {
@@ -181,9 +183,13 @@ export class OverlayStore<H, C> {
     if (!record || (record.state.phase !== "idle" && record.state.phase !== "failed")) return;
 
     this.batch(() => {
-      const { onSubmit, abortable = false } = record.request.callbacks;
-      if (!onSubmit) {
+      const { onSubmit, onSubmitted, abortable = false } = record.request.callbacks;
+      const succeed = () => {
+        if (onSubmitted) this.effects.push(() => onSubmitted(value));
         this.close(record);
+      };
+      if (!onSubmit) {
+        succeed();
         return;
       }
 
@@ -201,7 +207,7 @@ export class OverlayStore<H, C> {
       }
 
       if (!isThenable(result)) {
-        this.close(record);
+        succeed();
         return;
       }
 
@@ -210,7 +216,7 @@ export class OverlayStore<H, C> {
         this.records.get(id) === record && record.attempt === attempt && record.state.phase === "pending";
       result.then(
         () => {
-          if (isCurrent()) this.batch(() => this.close(record));
+          if (isCurrent()) this.batch(succeed);
         },
         (error: unknown) => {
           if (isCurrent()) this.batch(() => this.setState(record, { phase: "failed", error }));

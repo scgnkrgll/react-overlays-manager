@@ -102,6 +102,75 @@ describe("form overlay", () => {
   });
 });
 
+describe("openAsync", () => {
+  test("resolves with the value after onSubmit succeeds, keeping the overlay open through a failure", async () => {
+    const user = userEvent.setup();
+    const { NameOverlay } = setup();
+    const onSubmit = vi
+      .fn<(name: string) => Promise<void>>()
+      .mockRejectedValueOnce(new Error("Server down"))
+      .mockResolvedValueOnce(undefined);
+    let result!: Promise<unknown>;
+    act(() => void (result = NameOverlay.openAsync({ title: "Rename" }, { onSubmit })));
+    const settled = vi.fn();
+    void result.then(settled);
+
+    await user.type(screen.getByLabelText("name"), "Ada");
+    await user.click(screen.getByText("Save"));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Server down");
+    expect(settled).not.toHaveBeenCalled();
+
+    await user.click(screen.getByText("Save"));
+    await expect(result).resolves.toEqual({ submitted: true, value: "Ada" });
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  test("resolves without onSubmit as soon as the overlay submits", async () => {
+    const user = userEvent.setup();
+    const { NameOverlay } = setup();
+    let result!: Promise<unknown>;
+    act(() => void (result = NameOverlay.openAsync({ title: "Rename" })));
+
+    await user.type(screen.getByLabelText("name"), "Ada");
+    await user.click(screen.getByText("Save"));
+    await expect(result).resolves.toEqual({ submitted: true, value: "Ada" });
+  });
+
+  test("resolves with submitted: false on dismiss, including an aborted submit", async () => {
+    const user = userEvent.setup();
+    const { NameOverlay, overlays } = setup();
+    let first!: Promise<unknown>;
+    act(() => void (first = NameOverlay.openAsync({ title: "First" })));
+    act(() => overlays.dismissAll());
+    await expect(first).resolves.toEqual({ submitted: false });
+
+    let signal!: AbortSignal;
+    let second!: Promise<unknown>;
+    act(
+      () =>
+        void (second = NameOverlay.openAsync(
+          { title: "Second" },
+          { abortable: true, onSubmit: (_, context) => ((signal = context.signal), new Promise(() => {})) },
+        )),
+    );
+    await user.click(screen.getByText("Save"));
+    await user.click(screen.getByText("Cancel"));
+    await expect(second).resolves.toEqual({ submitted: false });
+    expect(signal.aborted).toBe(true);
+  });
+
+  test("resolves after the overlay has closed", async () => {
+    const user = userEvent.setup();
+    const { NameOverlay } = setup();
+    let result!: Promise<unknown>;
+    act(() => void (result = NameOverlay.openAsync({ title: "Rename" })));
+    const dialogAtResolve = result.then(() => screen.queryByRole("dialog"));
+
+    await user.click(screen.getByText("Save"));
+    expect(await dialogAtResolve).toBeNull();
+  });
+});
+
 describe("rendering", () => {
   test("renders layers in declaration order inside their container", () => {
     const Viewport = ({ children }: { children?: React.ReactNode }) => <section aria-label="toasts">{children}</section>;

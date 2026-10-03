@@ -5,6 +5,7 @@ import {
   type OverlayControl,
   type OverlayHandle,
   type OverlayInstance,
+  type OverlayResult,
   type OverlayState,
   type StackContainerProps,
   type StackInfo,
@@ -89,6 +90,30 @@ describe("open", () => {
     instance.update({ text: "b" });
     // @ts-expect-error update takes full props, not a partial
     instance.update({});
+  });
+});
+
+describe("openAsync", () => {
+  test("resolves to a result narrowed by submitted", async () => {
+    const result = await UserModal.openAsync({});
+    expectTypeOf(result).toEqualTypeOf<OverlayResult<User>>();
+    if (result.submitted) expectTypeOf(result.value).toEqualTypeOf<User>();
+    // @ts-expect-error value only exists once narrowed to submitted
+    void result.value;
+    expectTypeOf(Confirm.openAsync({ text: "Delete?" })).toEqualTypeOf<Promise<OverlayResult<void>>>();
+  });
+
+  test("onSubmit is optional even for non-void values, and onDismiss isn't accepted", () => {
+    UserModal.openAsync({});
+    UserModal.openAsync({}, { abortable: true, onSubmit: (user) => expectTypeOf(user).toEqualTypeOf<User>() });
+    // @ts-expect-error the promise replaces onDismiss
+    UserModal.openAsync({}, { onDismiss: () => {} });
+  });
+
+  test("props follow the same rules as open", () => {
+    Notice.openAsync();
+    // @ts-expect-error text is required
+    Confirm.openAsync();
   });
 });
 
